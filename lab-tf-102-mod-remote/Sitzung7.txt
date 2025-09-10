@@ -1,0 +1,9 @@
+Anwendungs-ID (Client)
+:
+6cef6c68-c861-4ef5-b2d1-61aa96ec6813
+Objekt-ID
+:
+6c8b52ec-ac23-4c08-ad24-ab6277109572
+Verzeichnis-ID (Mandant)
+:
+651035eb-e27b-4ca7-9ab5-8d9a6bf46a19
