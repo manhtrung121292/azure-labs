@@ -1,0 +1,88 @@
+name: Terraform CI/CD
+
+on:
+  pull_request:
+    paths: ["**/*.tf", "**/*.tfvars", ".github/workflows/terraform.yml"]
+  push:
+    branches: ["main"]
+    paths: ["**/*.tf", "**/*.tfvars", ".github/workflows/terraform.yml"]
+
+permissions:
+  contents: read
+
+env:
+  TF_IN_AUTOMATION: "true"
+  TF_INPUT: "false"
+  TF_VERSION: "1.6.6"
+
+jobs:
+  plan:
+    name: PR – fmt/validate/plan
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write   # ← OIDC-Token ausstellen
+      contents: read
+    steps:
+      - name: Code auschecken
+        uses: actions/checkout@v4
+
+      - name: Terraform installieren
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: terraform init (Backend via AAD)
+        run: terraform init -reconfigure
+
+      - name: terraform fmt (prüfend)
+        run: terraform fmt -check -recursive
+
+      - name: terraform validate
+        run: terraform validate
+
+      - name: terraform plan
+        run: terraform plan -no-color -out=tfplan
+
+      - name: Plan exportieren
+        run: terraform show -no-color tfplan > plan.txt
+
+      - name: Plan als Artefakt
+        uses: actions/upload-artifact@v4
+        with:
+          name: plan-${{ github.run_id }}
+          path: plan.txt
+
+  apply:
+    name: main – apply (mit Approval)
+    needs: plan
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: lab            # ← löst Approval-Gate aus
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: terraform init
+        run: terraform init -reconfigure
+      - name: terraform plan (erneut)
+        run: terraform plan -no-color -out=tfplan
+      - name: terraform apply
+        run: terraform apply -auto-approve tfplan
