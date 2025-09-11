@@ -17,6 +17,7 @@ env:
 
 jobs:
   plan:
+    if: github.event_name == 'pull_request'
     name: PR – fmt/validate/plan
     runs-on: ubuntu-latest
     permissions:
