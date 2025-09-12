@@ -32,3 +32,4 @@ resource "azurerm_resource_group" "rg" {
   location = var.location
   tags     = { env = "lab" }
 }
+tags = { env = "lab", owner = "Manh Trung 123" }
