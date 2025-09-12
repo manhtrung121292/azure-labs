@@ -1,8 +1,12 @@
 resource "azurerm_resource_group" "rg" {
-  name     = "rg-net-${var.prefix}-dev"
+  name     = var.rg_name
   location = var.location
-  tags     = var.tags
+  tags = {
+    env   = "lab"
+    owner = "Manh Trung 123"
+  }
 }
+
 
 module "network" {
   source              = "./modules/network"
@@ -32,4 +36,3 @@ resource "azurerm_resource_group" "rg" {
   location = var.location
   tags     = { env = "lab" }
 }
-tags = { env = "lab", owner = "Manh Trung 123" }
