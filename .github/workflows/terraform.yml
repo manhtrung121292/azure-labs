@@ -1,11 +1,16 @@
-name: Terraform CI/CD
+name: Terraform CI/CD (lab-tf-102-mod-remote)
 
 on:
   pull_request:
-    paths: ["**/*.tf", "**/*.tfvars", ".github/workflows/terraform.yml"]
+    branches: [ "main" ]
+    paths:
+      - "lab-tf-102-mod-remote/**"
+      - ".github/workflows/terraform.yml"
   push:
-    branches: ["main"]
-    paths: ["**/*.tf", "**/*.tfvars", ".github/workflows/terraform.yml"]
+    branches: [ "main" ]
+    paths:
+      - "lab-tf-102-mod-remote/**"
+      - ".github/workflows/terraform.yml"
 
 permissions:
   contents: read
@@ -17,16 +22,21 @@ env:
 
 jobs:
   plan:
+    # Chỉ chạy khi là pull_request (tránh cần thêm Branch Credential cho main)
+    if: github.event_name == 'pull_request'
     name: PR – fmt/validate/plan
     runs-on: ubuntu-latest
     permissions:
-      id-token: write   # ← OIDC-Token ausstellen
+      id-token: write         # cần cho OIDC
       contents: read
+    defaults:
+      run:
+        working-directory: lab-tf-102-mod-remote
     steps:
-      - name: Code auschecken
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Terraform installieren
+      - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ${{ env.TF_VERSION }}
@@ -41,7 +51,7 @@ jobs:
       - name: terraform init (Backend via AAD)
         run: terraform init -reconfigure
 
-      - name: terraform fmt (prüfend)
+      - name: terraform fmt (check)
         run: terraform fmt -check -recursive
 
       - name: terraform validate
@@ -50,14 +60,14 @@ jobs:
       - name: terraform plan
         run: terraform plan -no-color -out=tfplan
 
-      - name: Plan exportieren
+      - name: Export plan
         run: terraform show -no-color tfplan > plan.txt
 
-      - name: Plan als Artefakt
+      - name: Upload plan artifact
         uses: actions/upload-artifact@v4
         with:
           name: plan-${{ github.run_id }}
-          path: plan.txt
+          path: lab-tf-102-mod-remote/plan.txt
 
   apply:
     name: main – apply (mit Approval)
@@ -65,24 +75,32 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment:
-      name: lab            # ← löst Approval-Gate aus
+      name: lab                # PHẢI trùng y hệt Environment trong repo
     permissions:
       id-token: write
       contents: read
+    defaults:
+      run:
+        working-directory: lab-tf-102-mod-remote
     steps:
       - uses: actions/checkout@v4
+
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ${{ env.TF_VERSION }}
+
       - name: Azure Login (OIDC)
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
       - name: terraform init
         run: terraform init -reconfigure
-      - name: terraform plan (erneut)
+
+      - name: terraform plan (again for apply)
         run: terraform plan -no-color -out=tfplan
+
       - name: terraform apply
         run: terraform apply -auto-approve tfplan
