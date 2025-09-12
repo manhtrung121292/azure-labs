@@ -3,6 +3,9 @@ name: Terraform CI/CD
 on:
   pull_request:
     paths: ["**/*.tf", "**/*.tfvars", ".github/workflows/terraform.yml"]
+  push:
+    branches: ["main"]
+    paths: ["**/*.tf", "**/*.tfvars", ".github/workflows/terraform.yml"]
 
 permissions:
   contents: read
@@ -14,7 +17,6 @@ env:
 
 jobs:
   plan:
-    if: github.event_name == 'pull_request'
     name: PR – fmt/validate/plan
     runs-on: ubuntu-latest
     permissions:
