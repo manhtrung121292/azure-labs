@@ -1,12 +1,10 @@
-variable "prefix"   { 
-description = "Namenspräfix (klein, ziffern erlaubt)" 
-type = string 
+variable "rg_name" {
+  type        = string
+  description = "Name der Ressourcengruppe"
 }
-variable "tags" {
-  description = "Einheitliche Tags"
-  type        = map(string)
-  default = { env = "lab" 
-  owner = "Dein Name" 
-  costCenter = "learning"
-  }
+
+variable "location" {
+  type        = string
+  default     = "westeurope"
+  description = "Azure-Region"
 }
