@@ -10,5 +10,5 @@ terraform {
 
 provider "azurerm" {
   features {}
-  use_oidc = true   # ← ép provider dùng OIDC thay vì Azure CLI
+  use_oidc = true # ← ép provider dùng OIDC thay vì Azure CLI
 }

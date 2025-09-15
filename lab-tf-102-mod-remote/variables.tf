@@ -2,10 +2,10 @@ variable "prefix" {
   description = "Namenspräfix (klein, ziffern erlaubt)"
   type        = string
 }
-variable "location" { 
-description = "Azure-Region" 
-type = string 
-default = "westeurope" 
+variable "location" {
+  description = "Azure-Region"
+  type        = string
+  default     = "westeurope"
 }
 variable "tags" {
   description = "Einheitliche Tags"
